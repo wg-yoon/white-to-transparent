@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QVBoxLayout, QLa
 from PyQt5.QtGui import QFont, QImage, QPixmap
 from PyQt5.QtCore import Qt
 from copy import deepcopy
+
 class ImageViewer(QMainWindow):
     front_idx = None
     slider_flag = True
@@ -48,29 +49,35 @@ class ImageViewer(QMainWindow):
 
 
     def add_output_widget(self):
-        global output_label, img, datas, slider
+        global output_label, img, main_data, slider
+        
         self.output_wid = QWidget()
         output_label = QLabel(self)
 
+        ## Slider
         slider = QSlider(Qt.Horizontal, self)
         slider.setRange(0, 100)
         slider.setSingleStep(2)
-        slider.setValue(70)
+        slider.setValue(100)
         value = slider.value()
 
+        ## Save Button
         btn = QPushButton('Save!', self)
-        btn.clicked.connect(self.Save_clicked)
 
+        ## Main Image
         img = Image.open(file_path)
         img = img.convert('RGBA')
-        datas = img.getdata()
+        main_data = img.getdata()
 
+        ## Display Default Image
         pixmap = QPixmap.fromImage(self.get_transparent_image(value))
         scaled_pixmap=pixmap.scaled(int(self.width*0.7), int(self.height*0.7), Qt.KeepAspectRatio)
         output_label.setPixmap(scaled_pixmap)
         output_label.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
 
+        ## Connection
         slider.sliderMoved.connect(self.sliderMoved)
+        btn.clicked.connect(self.Save_clicked)
 
         output_vbox = QVBoxLayout()
         output_vbox.addWidget(output_label)
@@ -81,21 +88,23 @@ class ImageViewer(QMainWindow):
         self.output_wid.setLayout(output_vbox)
         self.output_wid.resize(self.width, self.height)
 
+
     def Save_clicked(self):
         fname = QFileDialog.getSaveFileName(self)[0]
         print(fname)
         threshold = 255/100*(slider.value())
-        newData = []
+        cur_data = []
         cur_img = deepcopy(img)
-        for item in datas:
+        for item in main_data:
             if item[0] > threshold and item[1] > threshold and item[2] > threshold:
-                newData.append((255, 255, 255, 0))
+                cur_data.append((255, 255, 255, 0))
             else:
-                newData.append(item)        
-        cur_img.putdata(newData)
+                cur_data.append(item)        
+        cur_img.putdata(cur_data)
         if not fname.endswith("png") or fname.endswith("PNG"):
             fname+='.png'
         cur_img.save(os.path.join(fname), "PNG")
+
 
     def sliderMoved(self, val):
         if val > 0:
@@ -103,12 +112,14 @@ class ImageViewer(QMainWindow):
             scaled_pixmap=pixmap.scaled(int(self.width*0.7), int(self.height*0.7), Qt.KeepAspectRatio)
             output_label.setPixmap(scaled_pixmap)
 
+
     # reference : https://gist.github.com/peace098beat/db8ef7161508e6500ebe
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.accept()
         else:
             event.ignore()
+
 
     def dropEvent(self, event):
         global file_path
@@ -123,16 +134,15 @@ class ImageViewer(QMainWindow):
 
     def get_transparent_image(self, scale):
         threshold = 255/100*scale
-        newData = []
+        cur_data = []
         cur_img = deepcopy(img)
-        for item in datas:
+        for item in main_data:
             if item[0] > threshold and item[1] > threshold and item[2] > threshold:
-                newData.append((255, 255, 255, 0))
+                cur_data.append((255, 255, 255, 0))
             else:
-                newData.append(item)        
-        cur_img.putdata(newData)
+                cur_data.append(item)
+        cur_img.putdata(cur_data)
         qim = ImageQt.ImageQt(cur_img)
-
         return qim
 
 
