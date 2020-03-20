@@ -11,7 +11,7 @@ If you use it, **please do not put large images!**
 Large images can be a little messy.
 
 ---
-###Usage
+### Usage
 
 ```bash
 python3 white2transparent.py
